@@ -33,6 +33,11 @@ IF(BORLAND)
     ADD_DEFINITIONS(-w-csu)
 ENDIF()
 
+IF (UNIX)
+  ADD_DEFINITIONS(-fPIC)
+  ADD_DEFINITIONS(-flto)
+ENDIF()
+
 #add_subdirectory (src)
 
 SET (LIB_TYPE STATIC)
