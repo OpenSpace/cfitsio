@@ -33,6 +33,7 @@ IF(BORLAND)
     ADD_DEFINITIONS(-w-csu)
 ENDIF()
 
+# JCC: Changes added to link under Ubuntu 20.04
 IF (UNIX)
   ADD_DEFINITIONS(-fPIC)
   ADD_DEFINITIONS(-flto)
