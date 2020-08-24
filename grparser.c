@@ -815,7 +815,7 @@ int     ngp_keyword_all_write(NGP_HDU *ngph, fitsfile *ffp, int mode)
 			  { fits_write_comment(ffp, ngph->tok[i].comment, &r);
 			    break;
 			  }
-			sprintf(buf, "%-8.8s%s", ngph->tok[i].name, ngph->tok[i].comment);
+			snprintf(buf,200, "%-8.8s%s", ngph->tok[i].name, ngph->tok[i].comment);
 			fits_write_record(ffp, buf, &r);
                         break;
            }
@@ -997,7 +997,7 @@ int	ngp_read_xtension(fitsfile *ff, int parent_hn, int simple_mode)
 			        if (((l - 1) == (int)strlen(incrementor_name)) && (0 == memcmp(incrementor_name, ngp_linkey.name, l - 1)))
 			          { incrementor_index++;
 			          }
-			        sprintf(ngp_linkey.name + l - 1, "%d", incrementor_index);
+			        snprintf(ngp_linkey.name + l - 1, NGP_MAX_NAME-l+1,"%d", incrementor_index);
 			      }
 			  }
 			r = ngp_hdu_insert_token(&ngph, &ngp_linkey);
@@ -1155,7 +1155,7 @@ int	ngp_read_group(fitsfile *ff, char *grpname, int parent_hn)
 			  { strncpy(grnm, ngp_linkey.value.s, NGP_MAX_STRING);
 			  }
 			else
-			  { sprintf(grnm, "DEFAULT_GROUP_%d", master_grp_idx++);
+			  { snprintf(grnm, NGP_MAX_STRING,"DEFAULT_GROUP_%d", master_grp_idx++);
 			  }
 			grnm[NGP_MAX_STRING - 1] = 0;
 			r = ngp_read_group(ff, grnm, my_hn);
@@ -1177,7 +1177,7 @@ int	ngp_read_group(fitsfile *ff, char *grpname, int parent_hn)
 			        if (((l - 1) == (int)strlen(incrementor_name)) && (0 == memcmp(incrementor_name, ngp_linkey.name, l - 1)))
 			          { incrementor_index++;
 			          }
-			        sprintf(ngp_linkey.name + l - 1, "%d", incrementor_index);
+			        snprintf(ngp_linkey.name + l - 1, NGP_MAX_NAME-l+1,"%d", incrementor_index);
 			      }
 			  }
          		r = ngp_hdu_insert_token(&ngph, &ngp_linkey); 
@@ -1215,8 +1215,13 @@ int	fits_execute_template(fitsfile *ff, char *ngp_template, int *status)
    if (NULL == status) return(NGP_NUL_PTR);
    if (NGP_OK != *status) return(*status);
 
+   /* This function uses many global variables (local to this file) and
+      therefore is not thread-safe. */
+   FFLOCK;
+   
    if ((NULL == ff) || (NULL == ngp_template))
      { *status = NGP_NUL_PTR;
+       FFUNLOCK;
        return(*status);
      }
 
@@ -1229,6 +1234,7 @@ int	fits_execute_template(fitsfile *ff, char *ngp_template, int *status)
 
    if (NGP_OK != (r = ngp_delete_extver_tab()))
      { *status = r;
+       FFUNLOCK;
        return(r);
      }
 
@@ -1237,7 +1243,11 @@ int	fits_execute_template(fitsfile *ff, char *ngp_template, int *status)
      { fits_movabs_hdu(ff, 1, &tmp0, status);
        fits_get_hdrspace(ff, &keys_exist, &more_keys, status);
        fits_movabs_hdu(ff, my_hn, &tmp0, status);
-       if (NGP_OK != *status) return(*status);	/* error here means file is corrupted */
+       if (NGP_OK != *status) /* error here means file is corrupted */
+       {
+          FFUNLOCK;
+          return(*status);	
+       }
        if (keys_exist > 0) first_extension = 0;	/* if keywords exist assume PHDU already exist */
      }
    else
@@ -1263,10 +1273,16 @@ int	fits_execute_template(fitsfile *ff, char *ngp_template, int *status)
 
        fits_movabs_hdu(ff, my_hn, &tmp0, status);
      }
-   if (NGP_OK != *status) return(*status);
-                                                                          
-   if (NGP_OK != (*status = ngp_include_file(ngp_template))) return(*status);
-
+     
+   if (NGP_OK != *status) {
+      FFUNLOCK;
+      return(*status);
+   }                                                                       
+   if (NGP_OK != (*status = ngp_include_file(ngp_template))) {
+      FFUNLOCK;
+      return(*status);
+   }
+   
    for (i = strlen(ngp_template) - 1; i >= 0; i--) /* strlen is > 0, otherwise fopen failed */
     { 
 #ifdef MSDOS
@@ -1309,7 +1325,7 @@ int	fits_execute_template(fitsfile *ff, char *ngp_template, int *status)
 			if (NGP_TTYPE_STRING == ngp_linkey.type)
 			  { strncpy(grnm, ngp_linkey.value.s, NGP_MAX_STRING); }
 			else
-			  { sprintf(grnm, "DEFAULT_GROUP_%d", master_grp_idx++); }
+			  { snprintf(grnm,NGP_MAX_STRING, "DEFAULT_GROUP_%d", master_grp_idx++); }
 			grnm[NGP_MAX_STRING - 1] = 0;
 			r = ngp_read_group(ff, grnm, 0);
 			first_extension = 0;
@@ -1334,5 +1350,6 @@ int	fits_execute_template(fitsfile *ff, char *ngp_template, int *status)
    ngp_delete_extver_tab();	/* delete extver table (if present), error ignored */
    
    *status = r;
+   FFUNLOCK;
    return(r);
  }
