@@ -16,7 +16,7 @@ INCLUDE (${CMAKE_ROOT}/Modules/CheckLibraryExists.cmake)
 INCLUDE (${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
 
 # Allow the developer to select if Dynamic or Static libraries are built
-OPTION (BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+OPTION (BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
 OPTION (USE_PTHREADS "Thread-safe build (using pthreads)" OFF)
 
 # Allow curl dependency to be disabled using "-DUseCurl=OFF":
