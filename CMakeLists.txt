@@ -50,16 +50,15 @@ IF(BORLAND)
     ADD_DEFINITIONS(-w-csu)
 ENDIF()
 
-# JCC: Changes added to link under Ubuntu 20.04
-IF (UNIX)
-  ADD_DEFINITIONS(-fPIC)
-  ADD_DEFINITIONS(-flto)
-ENDIF()
-
 #add_subdirectory (src)
 
 SET (LIB_TYPE STATIC)
 IF (BUILD_SHARED_LIBS)
+  # JCC: Changes added to link under Ubuntu 20.04
+  IF (UNIX)
+    ADD_DEFINITIONS(-fPIC)
+    ADD_DEFINITIONS(-flto)
+  ENDIF()
   SET (LIB_TYPE SHARED)
 ENDIF (BUILD_SHARED_LIBS)
 
