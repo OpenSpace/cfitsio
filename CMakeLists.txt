@@ -35,10 +35,10 @@ SET(LIB_NAME cfitsio)
 # Microsoft Visual Studio:
 IF(MSVC OR BORLAND)
     # Define
-    ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
+    ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE -DFF_NO_UNISTD_H)
     # Need an empty unistd.h in MSVC for flex-generated eval_l.c:
-    FILE(WRITE ${CMAKE_SOURCE_DIR}/unistd.h "")
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
+    # FILE(WRITE ${CMAKE_SOURCE_DIR}/unistd.h "")
+    # INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 ENDIF()
 
 IF(BORLAND)
